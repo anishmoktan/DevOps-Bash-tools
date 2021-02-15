@@ -12,7 +12,7 @@ Hari Sekhon - DevOps Bash Tools
 [![GitHub stars](https://img.shields.io/github/stars/harisekhon/devops-bash-tools?logo=github)](https://github.com/harisekhon/devops-bash-tools/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/harisekhon/devops-bash-tools?logo=github)](https://github.com/harisekhon/devops-bash-tools/network)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/HariSekhon/DevOps-Bash-tools?logo=github)](https://github.com/HariSekhon/DevOps-Bash-tools/commits/master)
-[![Lines of Code](https://img.shields.io/badge/lines%20of%20code-55k-lightgrey?logo=codecademy)](https://github.com/HariSekhon/DevOps-Bash-tools#hari-sekhon---devops-bash-tools)
+[![Lines of Code](https://img.shields.io/badge/lines%20of%20code-58k-lightgrey?logo=codecademy)](https://github.com/HariSekhon/DevOps-Bash-tools#hari-sekhon---devops-bash-tools)
 
 <!--
 BitBucket exposes HTML comments - open issue - works properly on GitHub/GitLab
@@ -337,6 +337,7 @@ etc.
   - `aws_users_mfa_active_report.sh` - lists AWS users password enabled and [MFA](https://aws.amazon.com/iam/features/mfa/) enabled status
   - `aws_users_mfa_serials.sh` - lists AWS users [MFA](https://aws.amazon.com/iam/features/mfa/) serial numbers (differentiates Virtual vs Hardware MFAs)
   - `aws_users_pw_last_used.sh` - lists AWS users and their password last used date
+  - `setup/eksctl_cluster.sh` - downloads [eksctl](https://eksctl.io/) and creates an [AWS EKS](https://aws.amazon.com/eks/) Kubernetes cluster
 
 #### GCP - Google Cloud Platform
 
@@ -367,6 +368,7 @@ etc.
   - `gcp_service_accounts_credential_keys.sh` - lists all service account credential keys and expiry dates, can `grep 9999-12-31T23:59:59Z` to find non-expiring keys
   - `gcp_service_accounts_credential_keys_age.sh` - lists all service account credential keys age in days
   - `gcp_service_accounts_credential_keys_expired.sh` - lists expired service account credential keys that should be removed and recreated if needed
+  - `gcp_iam_roles_in_use.sh` - lists GCP IAM roles in use in the current or all projects
   - `gcr_*.sh` - [Google Container Registry](https://cloud.google.com/container-registry) scripts:
     - `gcr_tag_latest.sh` - tags a given GCR docker `image:tag` as `latest` without pulling or pushing the docker image
     - `gcr_tag_datetime.sh` - tags a given GCR docker image with its creation date and UTC timestamp (when it was uploaded or created by [Google Cloud Build](https://cloud.google.com/cloud-build)) without pulling or pushing the docker image
@@ -387,11 +389,15 @@ etc.
     - `gce_meta.sh` - simple script to query the GCE metadata API from within Virtual Machines
     - `gce_when_preempted.sh` - GCE VM preemption latch script - can be executed any time to set one or more commands to execute upon preemption
     - `gce_is_preempted.sh` - GCE VM return true/false if preempted, callable from other scripts
+    - `gce_instance_service_accounts.sh` - lists GCE VM instance names and their service accounts
+  - `gcp_firewall_disable_default_rules.sh` - disables those lax GCP default network "allow all" firewall rules
+  - `gcp_firewall_risky_rules.sh` - lists risky GCP firewall rules that are enabled and allow traffic from 0.0.0.0/0
   - `gcp_sql_*.sh` - [Cloud SQL](https://cloud.google.com/sql) scripts:
     - `gcp_sql_backup.sh` - creates Cloud SQL backups
     - `gcp_sql_export.sh` - creates Cloud SQL exports to [GCS](https://cloud.google.com/storage)
     - `gcp_sql_enable_automated_backups.sh` - enable automated daily Cloud SQL  backups
     - `gcp_sql_enable_point_in_time_recovery.sh` - enable point-in-time recovery with write-ahead logs
+    - `gcp_sql_proxy.sh` - boots a [Cloud SQL Proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) to all Cloud SQL instances for fast convenient direct `psql` / `mysql` access via local sockets. Installs Cloud SQL Proxy if necessary
     - `gcp_sql_running_primaries.sh` - lists primary running Cloud SQL instances
     - `gcp_sql_service_accounts.sh` - lists Cloud SQL instance service accounts. Useful for copying to [IAM](https://cloud.google.com/iam) to grant permissions (eg. Storage Object Creator for SQL export backups to GCS)
     - `gcp_sql_create_readonly_service_account.sh` - creates a service account with read-only permissions to Cloud SQL eg. to run export backups to GCS
@@ -564,7 +570,8 @@ etc.
   - `teamcity_api.sh` - queries TeamCity's API, auto-handling authentication and other quirks of the API
   - `teamcity_create_project.sh` - creates a TeamCity project using the API
   - `teamcity_create_github_oauth_connection.sh` - creates a TeamCity GitHub OAuth VCS connection in the Root project, useful for bootstrapping projects from VCS configs
-  - `teamcity_create_vcs_root.sh` - creates a TeamCity VCS root from a save configuration (XML or JSON), as downloaded by `teamcity_vcs_roots_download.sh`
+  - `teamcity_create_vcs_root.sh` - creates a TeamCity VCS root from a save configuration (XML or JSON), as downloaded by `teamcity_export_vcs_roots.sh`
+  - `teamcity_upload_ssh_key.sh` - uploads an SSH private key to a TeamCity project (for use in VCS root connections)
   - `teamcity_agents.sh` - lists TeamCity agents, their connected state, authorized state, whether enabled and up to date
   - `teamcity_builds.sh` - lists the last 100 TeamCity builds along with the their state (eg. `finished`) and status (eg. `SUCCESS`/`FAILURE`)
   - `teamcity_buildtypes.sh` - lists TeamCity buildTypes (pipelines) along with the their project and IDs
@@ -939,6 +946,7 @@ make python
     make ls-scripts             print list of scripts in this project, ignoring code libraries in lib/ and .bash.d/
 
     make kubernetes             installs kubectl and kustomize to ~/bin/
+    make terraform              installs major terraform versions to ~/bin/ (useful during upgrades or switching between environments)
     make vim                    installs Vundle and plugins
     make tmux                   installs TMUX TPM and plugin for kubernetes context
     make ccmenu                 installs and (re)configures CCMenu to watch this and all other major HariSekhon GitHub repos

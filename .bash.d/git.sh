@@ -119,7 +119,7 @@ removed_branches(){
     cut -c 3- |
     awk '$4 ~ /gone\]/ {print $1}'
 }
-alias prune="removed_branches | xargs git branch -d"
+alias prune="removed_branches | xargs -r git branch -d"
 
 # don't use this unless you are a git pro and understand unwinding history and merge conflicts
 alias GRH="git reset HEAD^"
@@ -243,14 +243,21 @@ isGit(){
         return 0
     else
         # This is because git command doesn't return correctly when running from outside git root, complains there is not .git
-        pushd "$(dirname "$target")" >/dev/null || return 1
-        # subdirs which are not handled by Git fail isGit
-        # returns false for a newly added not committed dir
-        #if git log -1 "$target" 2>/dev/null | grep -q '.*'; then
-        if [ -n "$(git log -1 "$(basename "$target")" 2>/dev/null)" ]; then
-            # shellcheck disable=SC2164
-            popd &>/dev/null
-            return 0
+        if [ -d "$target" ]; then
+            pushd "$target" >/dev/null || return 1
+            if [ -n "$(git log -1 . 2>/dev/null)" ]; then
+                # shellcheck disable=SC2164
+                popd &>/dev/null
+                return 0
+            fi
+        else
+            pushd "$(dirname "$target")" >/dev/null || return 1
+            #if git log -1 "$target" 2>/dev/null | grep -q '.*'; then
+            if [ -n "$(git log -1 "$(basename "$target")" 2>/dev/null)" ]; then
+                # shellcheck disable=SC2164
+                popd &>/dev/null
+                return 0
+            fi
         fi
         # shellcheck disable=SC2164
         popd &>/dev/null
@@ -638,6 +645,9 @@ push(){
         echo "not in a Git or Mercurial controlled directory"
         return 1
     fi
+}
+pushu(){
+    push "$@" --set-upstream origin "$(git branch | awk '/^\*/{print $2}')"
 }
 
 switchbranch(){

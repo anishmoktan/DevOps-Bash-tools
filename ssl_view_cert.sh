@@ -3,7 +3,7 @@
 #  args: google.com
 #
 #  Author: Hari Sekhon
-#  Date: 2019-04-11 18:48:01 +0100 (Thu, 11 Apr 2019)
+#  Date: 2021-01-27 17:00:21 +0000 (Wed, 27 Jan 2021)
 #
 #  https://github.com/harisekhon/bash-tools
 #
@@ -23,28 +23,26 @@ srcdir="$(dirname "${BASH_SOURCE[0]}")"
 
 # shellcheck disable=SC2034
 usage_description="
-Dumps the SSL certificate blocks for hosts given as arguments, using OpenSSL
+Fetches and translates the remote host's SSL cert to human readable text using OpenSSL
 
 Port defaults to 443 if not given
+
+Uses adjacent script ssl_get_cert.sh
 "
 
 # used by usage() in lib/utils.sh
 # shellcheck disable=SC2034
-usage_args="host1[:port] [ host2:[:port]] [host3:[port]] ... ]"
+usage_args="host[:port]"
 
 help_usage "$@"
 
-min_args 1 "$@"
+num_args 1 "$@"
 
-for host in "$@"; do
-    host_port="$host"
-    if ! [[ "$host_port" =~ : ]]; then
-        host_port="$host_port:443"
-    fi
-    #if ! openssl s_client -connect "$host_port" </dev/null 2>/dev/null | sed -n '/BEGIN/,/END/p'; then
-    #    echo "ERROR connecting to $host_port"
-    #    exit 1
-    #fi
-    # sed returns 1
-    openssl s_client -connect "$host_port" </dev/null 2>/dev/null | sed -n '/BEGIN/,/END/p' || :
-done
+host_port="$1"
+
+if ! [[ "$host_port" =~ : ]]; then
+    host_port="$host_port:443"
+fi
+
+"$srcdir/ssl_get_cert.sh" "$host_port" |
+openssl x509 -noout -text

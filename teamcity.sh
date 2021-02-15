@@ -83,6 +83,9 @@ and use that to sync your Project configuration to/from Github under Project's S
 
 It's better to keep the TeamCity config VCS in the Root project because when you sync a project and it replaces the VCS json credential it breaks the GitHub sync
 and needs to be re-created. By putting it in the Root project and only enabling VCS sync on the sub-project you avoid this problem.
+
+
+Tested on TeamCity 2020.1, 2020.2
 "
 
 # used by usage() in lib/utils.sh
@@ -95,7 +98,12 @@ export COMPOSE_PROJECT_NAME="bash-tools"
 export COMPOSE_FILE="$srcdir/setup/teamcity-docker-compose.yml"
 
 vcs_config=".teamcity.vcs.json"
-vcs_config_auth=".teamcity.vcs.auth.json"
+# OAuth connection
+vcs_config_auth=".teamcity.vcs.oauth.json"
+# SSH key connection
+vcs_config_ssh_auth=".teamcity.vcs.ssh.json"
+
+TEAMCITY_SSH_KEY="${TEAMCITY_SSH_KEY:-$HOME/.ssh/id_rsa}"
 
 project="GitHub"
 
@@ -381,13 +389,29 @@ for disconnected_agent in $disconnected_agents; do
 done
 echo
 
+if [ -f "$TEAMCITY_SSH_KEY" ]; then
+    # overwrites key if already exists
+    if "$srcdir/teamcity_upload_ssh_key.sh" "$TEAMCITY_SSH_KEY" "VCS SSH Key"; then
+        if [ -f "$vcs_config_ssh_auth" ]; then
+            echo
+            timestamp "switching VCS config to '$vcs_config_ssh_auth'"
+            vcs_config="$vcs_config_ssh_auth"
+        fi
+    fi
+    echo
+fi
+
 if [ -n "${TEAMCITY_GITHUB_CLIENT_ID:-}" ] && [ -n "${TEAMCITY_GITHUB_CLIENT_SECRET:-}" ]; then
     # detects and skips creation if an OAuth connection named 'GitHub.com' already exists
     "$srcdir/teamcity_create_github_oauth_connection.sh"
     echo
-    timestamp "switching VCS config to '$vcs_config_auth'"
-    vcs_config="$vcs_config_auth"
-    echo
+    if [ "$vcs_config" != "$vcs_config_ssh_auth" ]; then
+        if [ -f "$vcs_config_auth" ]; then
+            timestamp "switching VCS config to '$vcs_config_auth'"
+            vcs_config="$vcs_config_auth"
+            echo
+        fi
+    fi
 fi
 
 if [ -f "$vcs_config" ]; then

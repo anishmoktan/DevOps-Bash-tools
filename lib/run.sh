@@ -71,7 +71,13 @@ kustomization.yaml) kustomize build
                     ;;
             *.go)   eval go run "'$filename'" "$("$srcdir/args_extract.sh" "$filename")"
                     ;;
-            *.tf)   terraform plan
+            *.tf)   if [ -d "%:p:h"/.terraform ]; then
+                        cd "%:p:h"
+                    fi
+                    #terraform plan
+                    terraform apply
+                    ;;
+            *.md)   bash -ic "cd '$dirname'; gitbrowse"
                     ;;
                *)   if [[ "$filename" =~ \.ya?ml$ ]] &&
                        grep -q '^apiVersion:' "$filename" &&

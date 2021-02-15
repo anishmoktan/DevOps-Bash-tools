@@ -51,6 +51,8 @@ help_usage "$@"
 no_more_opts "$@"
 
 project_id="$(gcloud config list --format="value(core.project)")"
+not_blank "$project" || die "ERROR: GCloud SDK core.project property not set in config"
+
 bucket="${BUCKET:-${project_id}-sql-backups}"
 cron="${CLOUD_SCHEDULER_CRON:-0 2 * * *}"
 topic="${PUBSUB_TOPIC:-cloud-sql-backups}"
@@ -72,6 +74,12 @@ for sql_instance in $sql_instances; do
     echo >&2
     instance_cron="$cron"
     for database in $databases; do
+        # skip information schema, not allowed to dump this on MySQL, fails with:
+        # ERROR: (gcloud.sql.export.sql) [ERROR_RDBMS] mysqldump: Dumping 'information_schema' DB content is not supported
+        [ "$database" = "information_schema" ] && continue
+        # skip these MySQL built-in DBs too
+        [ "$database" = "sys" ] && continue
+        [ "$database" = "performance_schema" ] && continue
         job_name="cloud-sql-backup--$sql_instance--$database"
         if [ -n "${CLOUD_SCHEDULER_REPLACE:-}" ]; then
             timestamp "Deleting Cloud Scheduler job for instance '$sql_instance' database '$database' if exists"
